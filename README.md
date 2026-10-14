@@ -73,10 +73,14 @@ C:\Whisper-ASR\
 
 ```text
 Whisper model 'large-v3-turbo' is ready.
+MiRAI Head connection URL(s):
+  http://192.168.0.15:8000
 Uvicorn running on http://0.0.0.0:8000
 ```
 
-`0.0.0.0`は待受設定であり、MiRAI Headへ入力する接続先アドレスではありません。
+`MiRAI Head connection URL(s)`に表示されたURLをMiRAI Headへ入力します。複数のネットワークアダプターやVPNがある場合はURLが複数表示されることがあります。その場合はMiRAI Headと同じネットワークのIPv4アドレスを選択してください。
+
+`0.0.0.0`は待受設定であり、MiRAI Headへ入力する接続先アドレスではありません。LANアドレスを自動検出できなかった場合だけ、次節の`ipconfig`で確認してください。
 
 ## MiRAI Headから接続する
 

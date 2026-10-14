@@ -3,8 +3,10 @@ from __future__ import annotations
 
 import argparse
 import gc
+import ipaddress
 import os
 import re
+import socket
 import tempfile
 import threading
 from contextlib import asynccontextmanager
@@ -63,6 +65,66 @@ class ServerSettings:
 
 
 settings = ServerSettings()
+
+
+def discover_lan_ipv4_addresses() -> list[str]:
+    """Return usable local IPv4 addresses, with the primary route first."""
+    addresses: list[str] = []
+    seen: set[str] = set()
+
+    def add(address: str) -> None:
+        try:
+            parsed = ipaddress.ip_address(address)
+        except ValueError:
+            return
+        if (
+            parsed.version != 4
+            or parsed.is_loopback
+            or parsed.is_link_local
+            or parsed.is_unspecified
+        ):
+            return
+        normalized = str(parsed)
+        if normalized not in seen:
+            seen.add(normalized)
+            addresses.append(normalized)
+
+    # A UDP connect selects the interface Windows would use for this route.
+    # It does not transmit application data and works without a reachable peer.
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as route_socket:
+            route_socket.connect(("192.0.2.1", 9))
+            add(str(route_socket.getsockname()[0]))
+    except OSError:
+        pass
+
+    try:
+        host_name = socket.gethostname()
+        for entry in socket.getaddrinfo(host_name, None, socket.AF_INET):
+            add(str(entry[4][0]))
+    except OSError:
+        pass
+
+    return addresses
+
+
+def print_connection_urls() -> None:
+    host = settings.host.strip()
+    if host in {"0.0.0.0", ""}:
+        addresses = discover_lan_ipv4_addresses()
+        print("", flush=True)
+        print("MiRAI Head connection URL(s):", flush=True)
+        if addresses:
+            for address in addresses:
+                print(f"  http://{address}:{settings.port}", flush=True)
+        else:
+            print("  No LAN IPv4 address was detected. Run ipconfig to check it.", flush=True)
+        print("", flush=True)
+        return
+
+    print("", flush=True)
+    print(f"Server URL: http://{host}:{settings.port}", flush=True)
+    print("", flush=True)
 
 
 class GlossaryProvider:
@@ -403,6 +465,7 @@ models = ModelManager()
 async def lifespan(_: FastAPI):
     settings.model_dir.mkdir(parents=True, exist_ok=True)
     models.load(settings.model)
+    print_connection_urls()
     yield
 
 

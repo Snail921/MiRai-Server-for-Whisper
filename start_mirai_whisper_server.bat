@@ -54,8 +54,8 @@ if errorlevel 1 (
 )
 
 echo Python: "%SERVER_PYTHON%"
-echo Listening on all IPv4 interfaces at port 8000.
-echo Use this PC's LAN IPv4 address from MiRAI Head.
+echo Starting MiRAI Whisper server...
+echo Connection URL(s) will be shown after the model is ready.
 echo.
 "%SERVER_PYTHON%" "%APP_ROOT%mirai_whisper_server.py" %*
 set "EXIT_CODE=%ERRORLEVEL%"
